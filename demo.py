@@ -201,7 +201,7 @@ def main():
         CHRISTIE_TEXTS,
         max_depth=4,
         min_depth=2,
-        min_nodes=3,
+        min_terminals=3,
         top_k=15
     )
     print_comparison(results1, "lovecraft", "christie")
@@ -216,7 +216,7 @@ def main():
         LLM_TEXTS,
         max_depth=4,
         min_depth=2,
-        min_nodes=3,
+        min_terminals=3,
         top_k=15
     )
     print_comparison(results2, "christie", "llm")
@@ -244,7 +244,7 @@ def main():
         "settings": {
             "max_depth": 4,
             "min_depth": 2,
-            "min_nodes": 3,
+            "min_terminals": 3,
         }
     }
 
