@@ -133,8 +133,8 @@ def parse_and_save_corpus(entries: list[TextEntry], output_path: str, source: st
 
     with open(output_path, 'w') as f:
         for i, entry in enumerate(entries):
-            # Normalize whitespace
-            text = ' '.join(entry.text.split())
+            # Truncate to first 2M characters and normalize whitespace
+            text = ' '.join(entry.text[:2_000_000].split())
 
             try:
                 doc = nlp(text)

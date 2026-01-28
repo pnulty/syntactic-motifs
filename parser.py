@@ -15,11 +15,12 @@ from typing import Iterator
 _nlp = None
 
 
-def get_nlp():
+def get_nlp(max_length: int = 2_000_000):
     """Get or create the spaCy + benepar pipeline."""
     global _nlp
     if _nlp is None:
         _nlp = spacy.load("en_core_web_sm")
+        _nlp.max_length = max_length
         _nlp.add_pipe("benepar", config={"model": "benepar_en3"})
     return _nlp
 
