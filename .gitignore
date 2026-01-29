@@ -1,0 +1,11 @@
+# Large data files
+gutenberg_parsed.jsonl
+*.jsonl
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
