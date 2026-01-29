@@ -170,9 +170,9 @@ def get_terminals_at_depth(tree: Tree, depth: int) -> list[str]:
         return [str(tree)]
 
     if depth <= 1:
-        # At depth 1, we just have the node label, get first terminal
-        all_terms = get_terminals(tree)
-        return all_terms[:1] if all_terms else []
+        # At depth 1, this node is a leaf in the pattern, so get ALL terminals
+        # under it (the pattern collapses this entire subtree)
+        return get_terminals(tree)
 
     terminals = []
     for child in tree:
