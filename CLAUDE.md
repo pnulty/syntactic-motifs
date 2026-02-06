@@ -26,6 +26,9 @@ This project analyzes syntactic patterns (motifs) in text using constituency par
 - `gutenberg_parsed.jsonl` - Parsed Gutenberg corpus
 - `human_llm_parsed.jsonl` - Parsed human/LLM texts (28 files each, LLM undersampled)
 
+### Tests
+- `test_mining.py` - Unit tests for mining.py and analyze_corpus.py (46 tests)
+
 ## Running
 
 ```bash
@@ -35,12 +38,23 @@ uv run python parse_human_llm.py --output human_llm_parsed.jsonl
 # Generate explorer data
 uv run python generate_explorer_data.py human_llm_parsed.jsonl --output explorer_human_llm.json
 uv run python generate_explorer_data.py gutenberg_parsed.jsonl --output explorer_data.json
+
+# Run tests
+uv run python -m pytest test_mining.py -v
 ```
+
+## Recent Changes (Feb 2025)
+- Added unit tests for mining and analysis modules (test_mining.py)
 
 ## Recent Changes (Jan 2025)
 - Added human vs LLM explorer for comparing syntactic patterns
 - Fixed `get_terminals_at_depth` in mining.py to return ALL terminals under collapsed subtrees (was only returning first terminal, causing incorrect highlighting)
 - Hosted explorers on GitHub Pages
+
+## Work in Progress (uncommitted)
+- `build_classification_data.py` - New script for building classification datasets
+- `classification_data/` - Output directory for classification data
+- Modified explorer files (explorer.html, explorer_standalone/)
 
 ## Potential Future Work
 - Add more LLM models for comparison (currently just one source)
