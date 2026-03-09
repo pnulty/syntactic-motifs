@@ -20,7 +20,7 @@ from analyze_corpus import (
 
 
 def collect_examples(sentences: list[dict], max_depth: int = 4,
-                     min_terminals: int = 3, max_examples: int = 10) -> dict[str, list]:
+                     min_terminals: int = 3, max_examples: int = 25) -> dict[str, list]:
     """Collect more examples per pattern for the explorer."""
     examples = defaultdict(list)
 

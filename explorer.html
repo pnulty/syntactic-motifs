@@ -283,6 +283,8 @@
                 <button class="toggle-btn" data-view="underused">Underused</button>
                 <button class="toggle-btn" data-view="both">Both</button>
             </div>
+            <label for="min-count" style="margin-left: 1rem;">Min count:</label>
+            <input type="number" id="min-count" value="8" min="1" max="100" style="width: 60px; padding: 0.4rem; border: none; border-radius: 4px;">
         </div>
         <div class="author-info" id="author-info"></div>
     </header>
@@ -302,6 +304,7 @@
         let currentAuthor = null;
         let currentView = 'overused';
         let selectedPattern = null;
+        let minCount = 8;
 
         async function loadData() {
             try {
@@ -371,7 +374,8 @@
 
         function renderPatternSection(type, title, patterns) {
             const limit = currentView === 'both' ? 25 : 40;
-            const displayPatterns = patterns.slice(0, limit);
+            const filtered = patterns.filter(p => p.count >= minCount);
+            const displayPatterns = filtered.slice(0, limit);
 
             let html = `<div class="pattern-section ${type}"><h2>${title}</h2>`;
             html += `
@@ -498,6 +502,11 @@
                 currentView = btn.dataset.view;
                 renderPatterns();
             });
+        });
+
+        document.getElementById('min-count').addEventListener('change', (e) => {
+            minCount = parseInt(e.target.value) || 1;
+            renderPatterns();
         });
 
         // Load data on page load
