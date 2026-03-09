@@ -422,6 +422,7 @@
             let html = `
                 <h2>Pattern</h2>
                 <div class="pattern-display">${escapeHtml(pattern)}</div>
+                <div id="pattern-tree" style="overflow-x: auto; text-align: center; margin-bottom: 1rem;"></div>
 
                 <div class="stats">
                     <div class="stat-item">
@@ -466,6 +467,7 @@
 
             html += '</div>';
             panel.innerHTML = html;
+            renderPatternTree(pattern, document.getElementById('pattern-tree'));
         }
 
         function highlightWords(sentence, words) {
@@ -508,6 +510,180 @@
             minCount = parseInt(e.target.value) || 1;
             renderPatterns();
         });
+
+        // ── Bracket notation parser & SVG tree renderer ──
+
+        const PHRASE_TAGS = new Set(['S','SBAR','SBARQ','SINV','SQ','NP','VP','ADJP','ADVP','PP','QP','WHNP','WHPP','WHADVP','WHADJP','FRAG','INTJ','LST','NAC','NX','PRN','PRT','RRC','UCP','X']);
+        const LEVEL_H = 52;
+        const NODE_PAD = 8;
+        const H_GAP = 6;
+        const FONT = '"SF Mono", "Consolas", "Monaco", monospace';
+        const WORD_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+        function parseBracket(s) {
+            s = s.trim();
+            if (s[0] !== '(') return null;
+            let pos = 1;
+            let label = '';
+            while (pos < s.length && s[pos] !== ' ' && s[pos] !== ')' && s[pos] !== '(') {
+                label += s[pos++];
+            }
+            while (pos < s.length && s[pos] === ' ') pos++;
+            let children = [];
+            while (pos < s.length && s[pos] !== ')') {
+                if (s[pos] === '(') {
+                    let depth = 0, start = pos;
+                    for (let i = pos; i < s.length; i++) {
+                        if (s[i] === '(') depth++;
+                        else if (s[i] === ')') { depth--; if (depth === 0) { pos = i + 1; break; } }
+                    }
+                    let child = parseBracket(s.substring(start, pos));
+                    if (child) children.push(child);
+                } else {
+                    let word = '';
+                    while (pos < s.length && s[pos] !== ')' && s[pos] !== '(') {
+                        word += s[pos++];
+                    }
+                    word = word.trim();
+                    if (word) children.push({ label: word, children: [], isWord: true });
+                }
+                while (pos < s.length && s[pos] === ' ') pos++;
+            }
+            return { label, children, isWord: false };
+        }
+
+        function measureText(text, fontSize, fontFamily) {
+            const ratio = fontFamily === WORD_FONT ? 0.55 : 0.62;
+            return text.length * fontSize * ratio + 16;
+        }
+
+        function layoutTree(node) {
+            const isPhrase = PHRASE_TAGS.has(node.label);
+            const isWord = node.isWord;
+            const fontSize = isWord ? 13 : (isPhrase ? 12 : 11);
+            const font = isWord ? WORD_FONT : FONT;
+            const labelW = measureText(node.label, fontSize, font);
+
+            if (node.children.length === 0) {
+                node.width = Math.max(labelW, 20);
+                node.labelW = labelW;
+                node.fontSize = fontSize;
+                node.font = font;
+                node.isPhrase = isPhrase;
+                return;
+            }
+
+            node.children.forEach(layoutTree);
+            const childrenWidth = node.children.reduce((sum, c) => sum + c.width, 0)
+                                + (node.children.length - 1) * H_GAP;
+            node.width = Math.max(labelW, childrenWidth);
+            node.labelW = labelW;
+            node.fontSize = fontSize;
+            node.font = font;
+            node.isPhrase = isPhrase;
+        }
+
+        function assignPositions(node, x, y) {
+            node.x = x + node.width / 2;
+            node.y = y;
+
+            if (node.children.length === 0) return;
+
+            const childrenWidth = node.children.reduce((sum, c) => sum + c.width, 0)
+                                + (node.children.length - 1) * H_GAP;
+            let cx = x + (node.width - childrenWidth) / 2;
+            for (const child of node.children) {
+                assignPositions(child, cx, y + LEVEL_H);
+                cx += child.width + H_GAP;
+            }
+        }
+
+        function escapeXml(s) {
+            return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function renderSVG(node, highlighted) {
+            const elements = [];
+
+            function drawNode(n) {
+                const isHL = highlighted.has(n);
+                const isPhrase = n.isPhrase;
+                const isWord = n.isWord;
+
+                for (const child of n.children) {
+                    const lineColor = (highlighted.has(n) && highlighted.has(child)) ? '#e67e22' : '#bbb';
+                    elements.push(`<line x1="${n.x}" y1="${n.y + 14}" x2="${child.x}" y2="${child.y - 10}" stroke="${lineColor}" stroke-width="1.5"/>`);
+                }
+
+                let fill, stroke, textColor, fontWeight, fontStyle, font;
+                if (isWord) {
+                    fill = 'none'; stroke = 'none';
+                    textColor = isHL ? '#b45d00' : '#666';
+                    fontWeight = isHL ? '500' : '400';
+                    fontStyle = 'italic'; font = WORD_FONT;
+                } else if (isPhrase) {
+                    fill = isHL ? '#fdebd0' : '#d5dde5';
+                    stroke = isHL ? '#e67e22' : '#95a5a6';
+                    textColor = isHL ? '#7d4e00' : '#2c3e50';
+                    fontWeight = '600'; fontStyle = 'normal'; font = FONT;
+                } else {
+                    fill = isHL ? '#fef5e7' : '#eef2f5';
+                    stroke = isHL ? '#e67e22' : '#ccc';
+                    textColor = isHL ? '#7d4e00' : '#555';
+                    fontWeight = '600'; fontStyle = 'normal'; font = FONT;
+                }
+
+                const rw = n.labelW;
+                const rh = isWord ? 20 : 22;
+                const ry = isWord ? 0 : 11;
+
+                if (!isWord) {
+                    elements.push(`<rect x="${n.x - rw/2}" y="${n.y - rh/2}" width="${rw}" height="${rh}" rx="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="${isPhrase ? 2 : 1}"/>`);
+                }
+
+                elements.push(`<text x="${n.x}" y="${n.y + (isWord ? 4 : 4)}" text-anchor="middle" font-family='${font}' font-size="${n.fontSize}" fill="${textColor}" font-weight="${fontWeight}" font-style="${fontStyle}">${escapeXml(n.label)}</text>`);
+
+                n.children.forEach(drawNode);
+            }
+
+            drawNode(node);
+            return elements.join('\n');
+        }
+
+        function treeExtent(node) {
+            let minX = node.x - node.labelW / 2;
+            let maxX = node.x + node.labelW / 2;
+            let maxY = node.y;
+            for (const child of node.children) {
+                const ext = treeExtent(child);
+                minX = Math.min(minX, ext.minX);
+                maxX = Math.max(maxX, ext.maxX);
+                maxY = Math.max(maxY, ext.maxY);
+            }
+            return { minX, maxX, maxY };
+        }
+
+        function renderPatternTree(pattern, container) {
+            const tree = parseBracket(pattern);
+            if (!tree) { container.innerHTML = ''; return; }
+
+            layoutTree(tree);
+            assignPositions(tree, 0, 20);
+
+            const ext = treeExtent(tree);
+            const pad = 15;
+            const w = ext.maxX - ext.minX + pad * 2;
+            const h = ext.maxY + 30;
+
+            function shift(n) {
+                n.x -= ext.minX - pad;
+                n.children.forEach(shift);
+            }
+            shift(tree);
+
+            const svgContent = renderSVG(tree, new Set());
+            container.innerHTML = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">\n${svgContent}\n</svg>`;
+        }
 
         // Load data on page load
         loadData();
