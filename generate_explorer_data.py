@@ -19,7 +19,7 @@ from analyze_corpus import (
 )
 
 
-def collect_examples(sentences: list[dict], max_depth: int = 4,
+def collect_examples(sentences: list[dict], max_depth: int = 5,
                      min_terminals: int = 3, max_examples: int = 25) -> dict[str, list]:
     """Collect more examples per pattern for the explorer."""
     examples = defaultdict(list)
@@ -50,7 +50,7 @@ def collect_examples(sentences: list[dict], max_depth: int = 4,
 
 
 def generate_author_data(corpus_path: str, author: str, baseline_counts: Counter,
-                         baseline_total: int, max_depth: int = 4,
+                         baseline_total: int, max_depth: int = 5,
                          min_terminals: int = 3, min_count: int = 5,
                          top_n: int = 50) -> dict:
     """Generate explorer data for a single author."""
@@ -94,7 +94,7 @@ def generate_author_data(corpus_path: str, author: str, baseline_counts: Counter
         sentences,
         max_depth=max_depth,
         min_terminals=min_terminals,
-        max_examples=10
+        max_examples=100
     )
 
     # Build pattern data
@@ -131,7 +131,7 @@ def main():
     parser.add_argument("--max-per-author", type=int, default=5000, help="Max sentences per author in baseline")
     parser.add_argument("--min-terminals", type=int, default=3, help="Min terminal nodes")
     parser.add_argument("--min-count", type=int, default=5, help="Min pattern count")
-    parser.add_argument("--top", type=int, default=50, help="Top N patterns per direction")
+    parser.add_argument("--top", type=int, default=200, help="Top N patterns per direction")
     args = parser.parse_args()
 
     # Get all authors
@@ -161,7 +161,7 @@ def main():
     print("Analyzing baseline...")
     baseline_counts, baseline_total, _ = analyze_parsed_corpus(
         baseline_sentences,
-        max_depth=4,
+        max_depth=5,
         min_terminals=args.min_terminals,
         collect_examples=0,
         verbose=True

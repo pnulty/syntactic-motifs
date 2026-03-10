@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What is a Syntactic Motif?</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 2rem 1.5rem;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        header p {
+            font-size: 1.05rem;
+            opacity: 0.85;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .content {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 2rem 1.5rem 4rem;
+        }
+
+        section {
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        section h2 {
+            font-size: 1.35rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        section h3 {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #444;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        section p {
+            margin-bottom: 1rem;
+            color: #444;
+        }
+
+        .sentence-display {
+            font-size: 1.1rem;
+            font-style: italic;
+            color: #2c3e50;
+            background: #f8f9fa;
+            padding: 1rem 1.25rem;
+            border-radius: 6px;
+            border-left: 4px solid #3498db;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Tree container */
+        .tree-container {
+            overflow-x: auto;
+            padding: 1rem 0;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .tree-container svg {
+            display: inline-block;
+        }
+
+        /* Pattern bracket display */
+        .pattern-bracket {
+            font-family: "SF Mono", "Consolas", monospace;
+            font-size: 0.88rem;
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin: 1rem 0;
+            overflow-x: auto;
+        }
+
+        .arrow-down {
+            text-align: center;
+            font-size: 2rem;
+            color: #bbb;
+            margin: 0.5rem 0;
+        }
+
+        /* Example cards grid */
+        .example-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin: 1rem 0;
+        }
+
+        .example-card {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+        }
+
+        .example-card mark {
+            background: #fdebd0;
+            padding: 0.1em 0.2em;
+            border-radius: 2px;
+            color: #7d4e00;
+        }
+
+        .example-card .slot-label {
+            font-size: 0.72rem;
+            color: #999;
+            font-family: "SF Mono", "Consolas", monospace;
+            margin-top: 0.4rem;
+        }
+
+        /* Fingerprint pattern blocks */
+        .fingerprint {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin: 1.25rem 0;
+        }
+
+        .fingerprint h4 {
+            font-size: 0.95rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+
+        .fingerprint .fp-meta {
+            font-size: 0.8rem;
+            color: #888;
+            margin-bottom: 0.75rem;
+        }
+
+        .fingerprint .fp-examples {
+            list-style: none;
+            padding: 0;
+        }
+
+        .fingerprint .fp-examples li {
+            padding: 0.4rem 0;
+            font-size: 0.92rem;
+            border-bottom: 1px solid #eee;
+            color: #444;
+        }
+
+        .fingerprint .fp-examples li:last-child {
+            border-bottom: none;
+        }
+
+        .fingerprint .fp-examples mark {
+            background: #fdebd0;
+            padding: 0.1em 0.2em;
+            border-radius: 2px;
+            color: #7d4e00;
+        }
+
+        /* PMI comparison cards */
+        .pmi-comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin: 1.25rem 0;
+        }
+
+        .pmi-card {
+            border-radius: 8px;
+            padding: 1.25rem;
+            border: 2px solid;
+        }
+
+        .pmi-card.llm-overuse {
+            border-color: #27ae60;
+            background: #f0faf4;
+        }
+
+        .pmi-card.human-overuse {
+            border-color: #e74c3c;
+            background: #fdf0ef;
+        }
+
+        .pmi-card h4 {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
+        }
+
+        .pmi-card.llm-overuse h4 { color: #27ae60; }
+        .pmi-card.human-overuse h4 { color: #e74c3c; }
+
+        .pmi-card .pmi-score {
+            font-family: "SF Mono", "Consolas", monospace;
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .pmi-card.llm-overuse .pmi-score { color: #27ae60; }
+        .pmi-card.human-overuse .pmi-score { color: #e74c3c; }
+
+        .pmi-card .pmi-pattern {
+            font-family: "SF Mono", "Consolas", monospace;
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            word-break: break-all;
+        }
+
+        .pmi-card .pmi-example {
+            font-style: italic;
+            color: #555;
+            font-size: 0.9rem;
+        }
+
+        /* Tag legend */
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 1.25rem;
+            margin: 1rem 0;
+            font-size: 0.85rem;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .legend-tag {
+            display: inline-block;
+            padding: 1px 8px;
+            border-radius: 10px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            font-family: "SF Mono", "Consolas", monospace;
+        }
+
+        .legend-tag.phrase {
+            background: #d5dde5;
+            color: #2c3e50;
+            border: 2px solid #95a5a6;
+        }
+
+        .legend-tag.pos {
+            background: #eef2f5;
+            color: #555;
+            border: 1px solid #ccc;
+        }
+
+        .legend-desc { color: #666; }
+
+        /* Explore links */
+        .explore-links {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .explore-links a {
+            display: inline-block;
+            padding: 0.6rem 1.25rem;
+            background: #2c3e50;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: background 0.15s;
+        }
+
+        .explore-links a:hover { background: #34495e; }
+
+        /* PMI formula */
+        .formula {
+            text-align: center;
+            font-size: 1.1rem;
+            margin: 1.25rem 0;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-family: "SF Mono", "Consolas", monospace;
+            color: #2c3e50;
+        }
+
+        /* Responsive */
+        @media (max-width: 700px) {
+            .example-grid { grid-template-columns: 1fr; }
+            .pmi-comparison { grid-template-columns: 1fr; }
+            section { padding: 1.25rem; }
+            header h1 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>What is a Syntactic Motif?</h1>
+    <p>How the hidden structure of sentences can reveal who — or what — wrote them.</p>
+</header>
+
+<div class="content">
+
+<!-- ───── Section 1: Sentences Have Structure ───── -->
+<section>
+    <h2>1. Sentences Have Structure</h2>
+    <p>Every sentence can be broken down into a <strong>parse tree</strong> — a hierarchy of phrases, parts of speech, and words. Here's a sentence and its tree:</p>
+
+    <div class="sentence-display">"It was not just a challenge, it was a revelation."</div>
+
+    <div class="tree-container" id="tree-main"
+         data-tree="(S (S (NP (PRP It)) (VP (VBD was) (RB not) (NP (RB just) (DT a) (NN challenge)))) (, ,) (S (NP (PRP it)) (VP (VBD was) (NP (DT a) (NN revelation)))) (. .))"
+         data-highlight="(S (NP (PRP It)) (VP (VBD was) (RB not) (NP (RB just) (DT a) (NN challenge))))|(S (NP (PRP it)) (VP (VBD was) (NP (DT a) (NN revelation))))">
+    </div>
+
+    <h3>Tag Legend</h3>
+    <div class="legend">
+        <div class="legend-item"><span class="legend-tag phrase">S</span> <span class="legend-desc">Sentence / clause</span></div>
+        <div class="legend-item"><span class="legend-tag phrase">NP</span> <span class="legend-desc">Noun phrase</span></div>
+        <div class="legend-item"><span class="legend-tag phrase">VP</span> <span class="legend-desc">Verb phrase</span></div>
+        <div class="legend-item"><span class="legend-tag pos">PRP</span> <span class="legend-desc">Personal pronoun</span></div>
+        <div class="legend-item"><span class="legend-tag pos">VBD</span> <span class="legend-desc">Past tense verb</span></div>
+        <div class="legend-item"><span class="legend-tag pos">RB</span> <span class="legend-desc">Adverb</span></div>
+        <div class="legend-item"><span class="legend-tag pos">DT</span> <span class="legend-desc">Determiner</span></div>
+        <div class="legend-item"><span class="legend-tag pos">NN</span> <span class="legend-desc">Noun</span></div>
+    </div>
+</section>
+
+<!-- ───── Section 2: Extracting a Pattern ───── -->
+<section>
+    <h2>2. Extracting a Pattern</h2>
+    <p>Look at the <span style="color: #e67e22; font-weight: 600;">highlighted clauses</span> in the tree above: <em>"It was not just a challenge"</em> and <em>"it was a revelation."</em> Together they form a "not just X, it was Y" construction — two parallel clauses joined by a comma.</p>
+
+    <p>A <strong>syntactic motif</strong> is this structural skeleton — the shape without the words:</p>
+
+    <div class="arrow-down">&darr;</div>
+
+    <div class="tree-container" id="tree-pattern"
+         data-tree="(S (S (NP (PRP)) (VP (VBD) (RB) (NP (RB) (DT) (NN)))) (,) (S (NP (PRP)) (VP (VBD) (NP (DT) (NN)))) (.))">
+    </div>
+
+    <div class="pattern-bracket">(S (S (NP (PRP)) (VP (VBD) (RB) (NP (RB) (DT) (NN)))) (,) (S (NP (PRP)) (VP (VBD) (NP (DT) (NN)))) (.))</div>
+
+    <p>We strip away the actual words and keep only the grammatical structure. This lets us find sentences that have the same <em>shape</em>, even when the words are completely different.</p>
+</section>
+
+<!-- ───── Section 3: Same Pattern, Different Words ───── -->
+<section>
+    <h2>3. Same Pattern, Different Words</h2>
+    <p>Here's the striking part. When we search a corpus of LLM-generated text for sentences matching this pattern, we find the same "not just X, it was Y" construction repeated with different words slotted in:</p>
+
+    <div class="example-grid">
+        <div class="example-card">
+            It was <mark>not just a dream</mark>, it was <mark>a prophecy</mark>.
+            <div class="slot-label">RB RB DT NN &middot; DT NN</div>
+        </div>
+        <div class="example-card">
+            It was <mark>not just a city</mark>, it was <mark>a labyrinth</mark>.
+            <div class="slot-label">RB RB DT NN &middot; DT NN</div>
+        </div>
+        <div class="example-card">
+            It was <mark>not just a sound</mark>, it was <mark>a symphony</mark>.
+            <div class="slot-label">RB RB DT NN &middot; DT NN</div>
+        </div>
+        <div class="example-card">
+            It was <mark>not just a story</mark>, it was <mark>a warning</mark>.
+            <div class="slot-label">RB RB DT NN &middot; DT NN</div>
+        </div>
+        <div class="example-card">
+            It was <mark>not just a house</mark>, it was <mark>a fortress</mark>.
+            <div class="slot-label">RB RB DT NN &middot; DT NN</div>
+        </div>
+        <div class="example-card">
+            It was <mark>not just a game</mark>, it was <mark>a battle</mark>.
+            <div class="slot-label">RB RB DT NN &middot; DT NN</div>
+        </div>
+    </div>
+
+    <p>The words change but the structure stays the same. This particular motif — the "not just X, it was Y" rhetorical escalation — is a strong LLM writing fingerprint.</p>
+</section>
+
+<!-- ───── Section 4: More LLM Fingerprints ───── -->
+<section>
+    <h2>4. More LLM Fingerprints</h2>
+    <p>This isn't a one-off. LLMs have a whole repertoire of structural habits. Here are two more patterns that are distinctively overused by AI:</p>
+
+    <div class="fingerprint">
+        <h4>"Noun VERBed ..., VERBing ..."</h4>
+        <div class="fp-meta">Pattern: <code>(S (NP (NNS)) (VP (VBD) (PP) (,) (S)) (.))</code> &mdash; PMI +3.75, 70 occurrences</div>
+        <ul class="fp-examples">
+            <li><mark>Shadows danced</mark> in the moonlight, <mark>taking on</mark> ethereal shapes.</li>
+            <li><mark>Whispers echoed</mark> through the trees, <mark>recounting</mark> tales of vanished tribes.</li>
+            <li><mark>Ideas swirled</mark> like autumn leaves, each <mark>carrying</mark> a fragment of a story.</li>
+        </ul>
+        <p style="margin-top: 0.75rem; font-size: 0.88rem; color: #666;">A plural noun does something poetic, then a participial clause adds a second layer of imagery. LLMs reach for this structure constantly.</p>
+    </div>
+
+    <div class="fingerprint">
+        <h4>"became more ADJ" / "grew more ADJ"</h4>
+        <div class="fp-meta">Pattern: <code>(VP (VBD) (ADJP (RBR) (JJ)))</code> &mdash; PMI +4.26, 50 occurrences</div>
+        <ul class="fp-examples">
+            <li>The silence <mark>grew more extreme</mark>.</li>
+            <li>The pattern <mark>became more apparent</mark>.</li>
+            <li>The colors <mark>became more vibrant</mark>.</li>
+            <li>The situation <mark>grew more dire</mark>.</li>
+        </ul>
+        <p style="margin-top: 0.75rem; font-size: 0.88rem; color: #666;">A simple verb + comparative adjective. LLMs love escalation — things always "grow more" or "become more" something.</p>
+    </div>
+
+    <div class="fingerprint">
+        <h4>"his voice cold and hollow" — absolute construction</h4>
+        <div class="fp-meta">Pattern: <code>(S (NP (PRP$) (NN)) (ADJP (JJ) (CC) (JJ)))</code> &mdash; PMI +4.37, 54 occurrences</div>
+        <ul class="fp-examples">
+            <li><mark>his voice</mark> <mark>soft and kind</mark></li>
+            <li><mark>her voice</mark> <mark>steady and resolute</mark></li>
+            <li><mark>her gaze</mark> <mark>unyielding and unforgiving</mark></li>
+            <li><mark>its voice</mark> <mark>cold and hollow</mark></li>
+        </ul>
+        <p style="margin-top: 0.75rem; font-size: 0.88rem; color: #666;">A possessive pronoun + noun, then two adjectives joined by "and." LLMs use this absolute construction 20 times more often than human writers.</p>
+    </div>
+</section>
+
+<!-- ───── Section 5: What Makes a Pattern Distinctive? ───── -->
+<section>
+    <h2>5. What Makes a Pattern Distinctive?</h2>
+    <p>Not every syntactic pattern is interesting — some structures are used equally by everyone. To find <em>distinctive</em> patterns, we use <strong>Pointwise Mutual Information (PMI)</strong>, which compares how often a pattern appears in one source versus the overall baseline:</p>
+
+    <div class="formula">
+        PMI = log<sub>2</sub>( freq<sub>source</sub> / freq<sub>baseline</sub> )
+    </div>
+
+    <p>A <strong style="color: #27ae60;">positive PMI</strong> means the source overuses the pattern — it appears more often than expected. A <strong style="color: #e74c3c;">negative PMI</strong> means the source underuses it. The higher the absolute value, the more distinctive the pattern is.</p>
+
+    <div class="pmi-comparison">
+        <div class="pmi-card llm-overuse">
+            <h4>LLM Overuse</h4>
+            <div class="pmi-score">+4.37</div>
+            <div class="pmi-pattern">(S (S (NP (PRP)) (VP (VBD) (RB) (NP (RB) (DT) (NN)))) (,) (S (NP (PRP)) (VP (VBD) (NP (DT) (NN)))) (.))</div>
+            <div class="pmi-example">"It was not just a challenge, it was a revelation."</div>
+        </div>
+        <div class="pmi-card human-overuse">
+            <h4>Human Overuse</h4>
+            <div class="pmi-score">&minus;3.21</div>
+            <div class="pmi-pattern">(S (NP (PRP)) (VP (VBD) (NP)) (.))</div>
+            <div class="pmi-example">"I took it." / "She said nothing."</div>
+        </div>
+    </div>
+
+    <p>LLMs tend toward ornate, layered constructions (absolute phrases, participial clauses, paired adjectives). Humans — at least in comparable fiction — use more direct, economical structures.</p>
+</section>
+
+<!-- ───── Section 6: Explore More ───── -->
+<section>
+    <h2>6. Explore the Full Data</h2>
+    <p>The examples above are just a taste. The full interactive explorers let you browse hundreds of distinctive patterns, see their PMI scores, and read real example sentences with the matching words highlighted.</p>
+
+    <div class="explore-links">
+        <a href="explorer_human_llm.html">Human vs LLM Explorer</a>
+        <a href="explorer.html">Gutenberg Authors Explorer</a>
+    </div>
+
+    <p style="margin-top: 1.25rem; font-size: 0.88rem; color: #888;">Patterns are extracted using constituency parsing (benepar + spaCy) and scored with PMI. Source code and methodology are available in the project repository.</p>
+</section>
+
+</div>
+
+<script>
+// ── Bracket notation parser & SVG tree renderer ──
+
+const PHRASE_TAGS = new Set(['S','SBAR','SBARQ','SINV','SQ','NP','VP','ADJP','ADVP','PP','QP','WHNP','WHPP','WHADVP','WHADJP','FRAG','INTJ','LST','NAC','NX','PRN','PRT','RRC','UCP','X']);
+const LEVEL_H = 52;
+const NODE_PAD = 8;
+const H_GAP = 6;
+const FONT = '"SF Mono", "Consolas", "Monaco", monospace';
+const WORD_FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+
+function parseBracket(s) {
+    s = s.trim();
+    if (s[0] !== '(') return null;
+    let pos = 1;
+    // Read label
+    let label = '';
+    while (pos < s.length && s[pos] !== ' ' && s[pos] !== ')' && s[pos] !== '(') {
+        label += s[pos++];
+    }
+    // Skip whitespace
+    while (pos < s.length && s[pos] === ' ') pos++;
+    let children = [];
+    // Check if next is '(' — child nodes — or text — leaf word
+    while (pos < s.length && s[pos] !== ')') {
+        if (s[pos] === '(') {
+            // Find matching close paren
+            let depth = 0, start = pos;
+            for (let i = pos; i < s.length; i++) {
+                if (s[i] === '(') depth++;
+                else if (s[i] === ')') { depth--; if (depth === 0) { pos = i + 1; break; } }
+            }
+            let child = parseBracket(s.substring(start, pos));
+            if (child) children.push(child);
+        } else {
+            // Read word token
+            let word = '';
+            while (pos < s.length && s[pos] !== ')' && s[pos] !== '(') {
+                word += s[pos++];
+            }
+            word = word.trim();
+            if (word) children.push({ label: word, children: [], isWord: true });
+        }
+        while (pos < s.length && s[pos] === ' ') pos++;
+    }
+    return { label, children, isWord: false };
+}
+
+function measureText(text, fontSize, fontFamily) {
+    // Approximate: 0.62 ch width for monospace, 0.55 for system font
+    const ratio = fontFamily === WORD_FONT ? 0.55 : 0.62;
+    return text.length * fontSize * ratio + 16; // +16 for padding
+}
+
+function layoutTree(node) {
+    const isPhrase = PHRASE_TAGS.has(node.label);
+    const isWord = node.isWord;
+    const fontSize = isWord ? 13 : (isPhrase ? 12 : 11);
+    const font = isWord ? WORD_FONT : FONT;
+    const labelW = measureText(node.label, fontSize, font);
+
+    if (node.children.length === 0) {
+        node.width = Math.max(labelW, 20);
+        node.labelW = labelW;
+        node.fontSize = fontSize;
+        node.font = font;
+        node.isPhrase = isPhrase;
+        return;
+    }
+
+    node.children.forEach(layoutTree);
+    const childrenWidth = node.children.reduce((sum, c) => sum + c.width, 0)
+                        + (node.children.length - 1) * H_GAP;
+    node.width = Math.max(labelW, childrenWidth);
+    node.labelW = labelW;
+    node.fontSize = fontSize;
+    node.font = font;
+    node.isPhrase = isPhrase;
+}
+
+function assignPositions(node, x, y) {
+    node.x = x + node.width / 2;
+    node.y = y;
+
+    if (node.children.length === 0) return;
+
+    const childrenWidth = node.children.reduce((sum, c) => sum + c.width, 0)
+                        + (node.children.length - 1) * H_GAP;
+    let cx = x + (node.width - childrenWidth) / 2;
+    for (const child of node.children) {
+        assignPositions(child, cx, y + LEVEL_H);
+        cx += child.width + H_GAP;
+    }
+}
+
+function buildHighlightSet(tree, highlightBrackets) {
+    // For each highlight bracket string, parse it, then find matching subtrees in tree
+    const highlighted = new Set();
+    if (!highlightBrackets) return highlighted;
+
+    const patterns = highlightBrackets.split('|').map(s => s.trim()).filter(s => s);
+
+    function bracketStr(node) {
+        if (node.isWord) return node.label;
+        if (node.children.length === 0) return '(' + node.label + ')';
+        return '(' + node.label + ' ' + node.children.map(bracketStr).join(' ') + ')';
+    }
+
+    function markMatches(node) {
+        const bs = bracketStr(node);
+        for (const p of patterns) {
+            if (bs === p) {
+                markAll(node);
+            }
+        }
+        node.children.forEach(markMatches);
+    }
+
+    function markAll(node) {
+        highlighted.add(node);
+        node.children.forEach(markAll);
+    }
+
+    markMatches(tree);
+    return highlighted;
+}
+
+function renderSVG(node, highlighted) {
+    const elements = [];
+
+    function drawNode(n) {
+        const isHL = highlighted.has(n);
+        const isPhrase = n.isPhrase;
+        const isWord = n.isWord;
+
+        // Draw lines to children
+        for (const child of n.children) {
+            const lineColor = (highlighted.has(n) && highlighted.has(child)) ? '#e67e22' : '#bbb';
+            elements.push(`<line x1="${n.x}" y1="${n.y + 14}" x2="${child.x}" y2="${child.y - 10}" stroke="${lineColor}" stroke-width="1.5"/>`);
+        }
+
+        // Draw node label
+        let fill, stroke, textColor, fontWeight, fontStyle, font;
+        if (isWord) {
+            fill = 'none';
+            stroke = 'none';
+            textColor = isHL ? '#b45d00' : '#666';
+            fontWeight = isHL ? '500' : '400';
+            fontStyle = 'italic';
+            font = WORD_FONT;
+        } else if (isPhrase) {
+            fill = isHL ? '#fdebd0' : '#d5dde5';
+            stroke = isHL ? '#e67e22' : '#95a5a6';
+            textColor = isHL ? '#7d4e00' : '#2c3e50';
+            fontWeight = '600';
+            fontStyle = 'normal';
+            font = FONT;
+        } else {
+            fill = isHL ? '#fef5e7' : '#eef2f5';
+            stroke = isHL ? '#e67e22' : '#ccc';
+            textColor = isHL ? '#7d4e00' : '#555';
+            fontWeight = '600';
+            fontStyle = 'normal';
+            font = FONT;
+        }
+
+        const rw = n.labelW;
+        const rh = isWord ? 20 : 22;
+        const ry = isWord ? 0 : 11;
+
+        if (!isWord) {
+            elements.push(`<rect x="${n.x - rw/2}" y="${n.y - rh/2}" width="${rw}" height="${rh}" rx="${ry}" fill="${fill}" stroke="${stroke}" stroke-width="${isPhrase ? 2 : 1}"/>`);
+        }
+
+        elements.push(`<text x="${n.x}" y="${n.y + (isWord ? 4 : 4)}" text-anchor="middle" font-family='${font}' font-size="${n.fontSize}" fill="${textColor}" font-weight="${fontWeight}" font-style="${fontStyle}">${escapeXml(n.label)}</text>`);
+
+        n.children.forEach(drawNode);
+    }
+
+    drawNode(node);
+    return elements.join('\n');
+}
+
+function escapeXml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function treeExtent(node) {
+    let minX = node.x - node.labelW / 2;
+    let maxX = node.x + node.labelW / 2;
+    let maxY = node.y;
+    for (const child of node.children) {
+        const ext = treeExtent(child);
+        minX = Math.min(minX, ext.minX);
+        maxX = Math.max(maxX, ext.maxX);
+        maxY = Math.max(maxY, ext.maxY);
+    }
+    return { minX, maxX, maxY };
+}
+
+function renderTree(container) {
+    const bracketStr = container.dataset.tree;
+    const highlightStr = container.dataset.highlight || '';
+    const tree = parseBracket(bracketStr);
+    if (!tree) { container.textContent = 'Parse error'; return; }
+
+    layoutTree(tree);
+    assignPositions(tree, 0, 20);
+
+    const highlighted = buildHighlightSet(tree, highlightStr);
+    const ext = treeExtent(tree);
+    const pad = 15;
+    const w = ext.maxX - ext.minX + pad * 2;
+    const h = ext.maxY + 30;
+
+    // Shift so minX starts at pad
+    function shift(n) {
+        n.x -= ext.minX - pad;
+        n.children.forEach(shift);
+    }
+    shift(tree);
+
+    const svgContent = renderSVG(tree, highlighted);
+    container.innerHTML = `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">\n${svgContent}\n</svg>`;
+}
+
+// Render all tree containers on page load
+document.querySelectorAll('.tree-container').forEach(renderTree);
+</script>
+
+</body>
+</html>

@@ -373,7 +373,7 @@
         }
 
         function renderPatternSection(type, title, patterns) {
-            const limit = currentView === 'both' ? 25 : 40;
+            const limit = currentView === 'both' ? 100 : 200;
             const filtered = patterns.filter(p => p.count >= minCount);
             const displayPatterns = filtered.slice(0, limit);
 
@@ -448,7 +448,8 @@
                 </div>
 
                 <h2>Examples</h2>
-                <div class="example-list">
+                <input type="text" id="example-search" placeholder="Search examples..." style="width: 100%; padding: 0.5rem 0.75rem; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.75rem;">
+                <div class="example-list" id="example-list">
             `;
 
             if (patternData.examples.length === 0) {
@@ -457,7 +458,7 @@
                 patternData.examples.forEach(ex => {
                     const highlighted = highlightWords(ex.sentence, ex.words);
                     html += `
-                        <div class="example-item">
+                        <div class="example-item" data-sentence="${escapeHtml(ex.sentence.toLowerCase())}">
                             <div class="example-sentence">${highlighted}</div>
                             <div class="example-meta">— ${escapeHtml(ex.title)}</div>
                         </div>
@@ -468,6 +469,13 @@
             html += '</div>';
             panel.innerHTML = html;
             renderPatternTree(pattern, document.getElementById('pattern-tree'));
+
+            document.getElementById('example-search').addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                document.querySelectorAll('#example-list .example-item').forEach(item => {
+                    item.style.display = item.dataset.sentence.includes(query) ? '' : 'none';
+                });
+            });
         }
 
         function highlightWords(sentence, words) {
