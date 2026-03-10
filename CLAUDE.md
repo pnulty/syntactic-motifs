@@ -21,6 +21,7 @@ This project analyzes syntactic patterns (motifs) in text using constituency par
 ### Explorers
 - `explorer.html` + `explorer_data.json` - Gutenberg authors (23 authors)
 - `explorer_human_llm.html` + `explorer_human_llm.json` - Human vs LLM comparison
+- `explainer.html` - "What is a Syntactic Motif?" explanatory page with SVG tree diagrams
 
 ### Data Files (gitignored)
 - `gutenberg_parsed.jsonl` - Parsed Gutenberg corpus
@@ -43,6 +44,15 @@ uv run python generate_explorer_data.py gutenberg_parsed.jsonl --output explorer
 uv run python -m pytest test_mining.py -v
 ```
 
+## Recent Changes (Mar 2025)
+- Added SVG tree diagrams to both explorer pages (renders when a pattern is selected)
+- Added example search box in explorer examples panel (filters as you type)
+- Increased display limits: 200 patterns single view, 100 both view
+- Increased max_examples from 10 to 100, --top from 50 to 200
+- Increased max_depth from 4 to 5 to capture deeper patterns (e.g. "not just X, it was Y")
+- Rewrote explainer.html to use "It was not just a challenge, it was a revelation" as primary example
+- Tree renderer code (parseBracket, layoutTree, renderSVG etc.) shared across explainer and both explorers
+
 ## Recent Changes (Feb 2025)
 - Added unit tests for mining and analysis modules (test_mining.py)
 
@@ -54,7 +64,13 @@ uv run python -m pytest test_mining.py -v
 ## Work in Progress (uncommitted)
 - `build_classification_data.py` - New script for building classification datasets
 - `classification_data/` - Output directory for classification data
-- Modified explorer files (explorer.html, explorer_standalone/)
+- JSON data files need regenerating with max_depth=5
+
+## Environment Notes
+- Uses `en_core_web_sm` spaCy model (not `en_core_web_md`)
+- benepar 0.2.0 requires `transformers<5` (T5Tokenizer API breaking change in v5)
+- Opening HTML files via `file://` breaks `fetch()` for JSON data; use `python3 -m http.server` instead
+- GitHub Pages serves the explorers publicly (no CORS issue there)
 
 ## Potential Future Work
 - Add more LLM models for comparison (currently just one source)
@@ -63,3 +79,4 @@ uv run python -m pytest test_mining.py -v
 - Time-series analysis (how patterns change across an author's works)
 - Export functionality in explorer (CSV of patterns)
 - Side-by-side comparison view in explorer (two authors at once)
+- Sentence → motifs search (would require porting subtree extraction to JS or adding a backend)
