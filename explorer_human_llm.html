@@ -305,6 +305,7 @@
         let currentView = 'overused';
         let selectedPattern = null;
         let minCount = 8;
+        let currentPatternData = null;
 
         async function loadData() {
             try {
@@ -407,17 +408,17 @@
             selectedPattern = pattern;
 
             // Find pattern in current author's data
-            let patternData = currentAuthor.overused.find(p => p.pattern === pattern)
+            currentPatternData = currentAuthor.overused.find(p => p.pattern === pattern)
                 || currentAuthor.underused.find(p => p.pattern === pattern);
 
-            if (!patternData) {
+            if (!currentPatternData) {
                 document.getElementById('examples-panel').innerHTML =
                     '<div class="placeholder">Pattern not found</div>';
                 return;
             }
 
             const panel = document.getElementById('examples-panel');
-            const ratio = patternData.ratio ? `${patternData.ratio}×` : '∞';
+            const ratio = currentPatternData.ratio ? `${currentPatternData.ratio}×` : '∞';
 
             let html = `
                 <h2>Pattern</h2>
@@ -427,15 +428,15 @@
                 <div class="stats">
                     <div class="stat-item">
                         <span class="stat-label">PMI</span>
-                        <span class="stat-value">${patternData.pmi >= 0 ? '+' : ''}${patternData.pmi.toFixed(3)}</span>
+                        <span class="stat-value">${currentPatternData.pmi >= 0 ? '+' : ''}${currentPatternData.pmi.toFixed(3)}</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Author freq</span>
-                        <span class="stat-value">${patternData.author_freq.toFixed(4)}/sent</span>
+                        <span class="stat-value">${currentPatternData.author_freq.toFixed(4)}/sent</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Baseline freq</span>
-                        <span class="stat-value">${patternData.baseline_freq.toFixed(4)}/sent</span>
+                        <span class="stat-value">${currentPatternData.baseline_freq.toFixed(4)}/sent</span>
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Ratio</span>
@@ -443,38 +444,72 @@
                     </div>
                     <div class="stat-item">
                         <span class="stat-label">Count</span>
-                        <span class="stat-value">${patternData.count}</span>
+                        <span class="stat-value">${currentPatternData.count}</span>
                     </div>
                 </div>
 
-                <h2>Examples</h2>
-                <input type="text" id="example-search" placeholder="Search examples..." style="width: 100%; padding: 0.5rem 0.75rem; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 0.75rem;">
-                <div class="example-list" id="example-list">
+                <h2>Examples <span id="example-count" style="font-size: 0.85rem; font-weight: 400; color: #999;"></span></h2>
+                <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 0.75rem;">
+                    <input type="text" id="example-search" placeholder="Search examples..." style="flex: 1; padding: 0.5rem 0.75rem; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px;">
+                    <label style="font-size: 0.85rem; color: #666; white-space: nowrap; cursor: pointer;">
+                        <input type="checkbox" id="show-duplicates"> Show duplicates
+                    </label>
+                </div>
+                <div class="example-list" id="example-list"></div>
             `;
 
-            if (patternData.examples.length === 0) {
-                html += '<div class="placeholder">No examples collected</div>';
-            } else {
-                patternData.examples.forEach(ex => {
-                    const highlighted = highlightWords(ex.sentence, ex.words);
-                    html += `
-                        <div class="example-item" data-sentence="${escapeHtml(ex.sentence.toLowerCase())}">
-                            <div class="example-sentence">${highlighted}</div>
-                            <div class="example-meta">— ${escapeHtml(ex.title)}</div>
-                        </div>
-                    `;
+            panel.innerHTML = html;
+            renderPatternTree(pattern, document.getElementById('pattern-tree'));
+            renderExampleList();
+
+            document.getElementById('example-search').addEventListener('input', filterExamples);
+            document.getElementById('show-duplicates').addEventListener('change', renderExampleList);
+        }
+
+        function renderExampleList() {
+            const container = document.getElementById('example-list');
+            if (!currentPatternData || !container) return;
+
+            const showDupes = document.getElementById('show-duplicates')?.checked;
+            let examples = currentPatternData.examples;
+
+            if (!showDupes) {
+                const seen = new Set();
+                examples = examples.filter(ex => {
+                    const key = ex.words + '|||' + ex.sentence;
+                    if (seen.has(key)) return false;
+                    seen.add(key);
+                    return true;
                 });
             }
 
-            html += '</div>';
-            panel.innerHTML = html;
-            renderPatternTree(pattern, document.getElementById('pattern-tree'));
+            document.getElementById('example-count').textContent = `(${examples.length})`;
 
-            document.getElementById('example-search').addEventListener('input', (e) => {
-                const query = e.target.value.toLowerCase();
-                document.querySelectorAll('#example-list .example-item').forEach(item => {
-                    item.style.display = item.dataset.sentence.includes(query) ? '' : 'none';
-                });
+            if (examples.length === 0) {
+                container.innerHTML = '<div class="placeholder">No examples collected</div>';
+                return;
+            }
+
+            let html = '';
+            examples.forEach(ex => {
+                const highlighted = highlightWords(ex.sentence, ex.words);
+                html += `
+                    <div class="example-item" data-sentence="${escapeHtml(ex.sentence.toLowerCase())}">
+                        <div class="example-sentence">${highlighted}</div>
+                        <div class="example-meta">— ${escapeHtml(ex.title)}</div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+            filterExamples();
+        }
+
+        function filterExamples() {
+            const searchEl = document.getElementById('example-search');
+            if (!searchEl) return;
+            const query = searchEl.value.toLowerCase();
+            document.querySelectorAll('#example-list .example-item').forEach(item => {
+                item.style.display = item.dataset.sentence.includes(query) ? '' : 'none';
             });
         }
 
