@@ -373,7 +373,7 @@
         }
 
         function renderPatternSection(type, title, patterns) {
-            const limit = currentView === 'both' ? 100 : 200;
+            const limit = currentView === 'both' ? 250 : 500;
             const filtered = patterns.filter(p => p.count >= minCount);
             const displayPatterns = filtered.slice(0, limit);
 

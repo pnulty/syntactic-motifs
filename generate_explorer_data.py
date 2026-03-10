@@ -34,15 +34,11 @@ def collect_examples(sentences: list[dict], max_depth: int = 5,
                 tree, sent_text, max_depth=max_depth, min_terminals=min_terminals
             ):
                 if len(examples[pattern]) < max_examples:
-                    # Avoid duplicate highlights (same words in same sentence)
-                    # But allow same sentence with different highlighted portions
-                    if not any(highlighted == ex['words'] and sentence == ex['sentence']
-                               for ex in examples[pattern]):
-                        examples[pattern].append({
-                            'words': highlighted,
-                            'sentence': sentence,
-                            'title': title
-                        })
+                    examples[pattern].append({
+                        'words': highlighted,
+                        'sentence': sentence,
+                        'title': title
+                    })
         except Exception:
             continue
 
@@ -94,7 +90,7 @@ def generate_author_data(corpus_path: str, author: str, baseline_counts: Counter
         sentences,
         max_depth=max_depth,
         min_terminals=min_terminals,
-        max_examples=100
+        max_examples=10000
     )
 
     # Build pattern data
@@ -131,7 +127,7 @@ def main():
     parser.add_argument("--max-per-author", type=int, default=5000, help="Max sentences per author in baseline")
     parser.add_argument("--min-terminals", type=int, default=3, help="Min terminal nodes")
     parser.add_argument("--min-count", type=int, default=5, help="Min pattern count")
-    parser.add_argument("--top", type=int, default=200, help="Top N patterns per direction")
+    parser.add_argument("--top", type=int, default=500, help="Top N patterns per direction")
     args = parser.parse_args()
 
     # Get all authors
