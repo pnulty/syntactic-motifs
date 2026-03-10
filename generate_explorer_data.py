@@ -48,7 +48,7 @@ def collect_examples(sentences: list[dict], max_depth: int = 5,
 def generate_author_data(corpus_path: str, author: str, baseline_counts: Counter,
                          baseline_total: int, max_depth: int = 5,
                          min_terminals: int = 3, min_count: int = 5,
-                         top_n: int = 50) -> dict:
+                         top_n: int = 50, max_examples: int = 10000) -> dict:
     """Generate explorer data for a single author."""
 
     # Load author's sentences
@@ -90,7 +90,7 @@ def generate_author_data(corpus_path: str, author: str, baseline_counts: Counter
         sentences,
         max_depth=max_depth,
         min_terminals=min_terminals,
-        max_examples=10000
+        max_examples=max_examples
     )
 
     # Build pattern data
@@ -128,6 +128,7 @@ def main():
     parser.add_argument("--min-terminals", type=int, default=3, help="Min terminal nodes")
     parser.add_argument("--min-count", type=int, default=5, help="Min pattern count")
     parser.add_argument("--top", type=int, default=500, help="Top N patterns per direction")
+    parser.add_argument("--max-examples", type=int, default=10000, help="Max examples per pattern")
     args = parser.parse_args()
 
     # Get all authors
@@ -183,7 +184,8 @@ def main():
             baseline_total,
             min_terminals=args.min_terminals,
             min_count=args.min_count,
-            top_n=args.top
+            top_n=args.top,
+            max_examples=args.max_examples
         )
         if author_data:
             explorer_data['authors'].append(author_data)
