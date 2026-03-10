@@ -34,11 +34,13 @@ def collect_examples(sentences: list[dict], max_depth: int = 5,
                 tree, sent_text, max_depth=max_depth, min_terminals=min_terminals
             ):
                 if len(examples[pattern]) < max_examples:
-                    examples[pattern].append({
-                        'words': highlighted,
-                        'sentence': sentence,
-                        'title': title
-                    })
+                    # Skip if this exact sentence already collected for this pattern
+                    if not any(sentence == ex['sentence'] for ex in examples[pattern]):
+                        examples[pattern].append({
+                            'words': highlighted,
+                            'sentence': sentence,
+                            'title': title
+                        })
         except Exception:
             continue
 
